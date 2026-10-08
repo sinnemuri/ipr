@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: meme-platform-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: meme
+      POSTGRES_PASSWORD: meme
+      POSTGRES_DB: meme_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - meme_pg_data:/var/lib/postgresql/data
+
+volumes:
+  meme_pg_data:
