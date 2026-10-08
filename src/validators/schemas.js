@@ -41,6 +41,11 @@ const updateRoleSchema = Joi.object({
   role: Joi.string().valid('user', 'moderator', 'admin').required(),
 });
 
+const userListQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(20),
+});
+
 const idParamSchema = Joi.object({
   id: Joi.number().integer().positive().required(),
 });
@@ -87,6 +92,7 @@ module.exports = {
   resetPasswordSchema,
   updateUserSchema,
   updateRoleSchema,
+  userListQuerySchema,
   idParamSchema,
   paginationSchema,
   categorySchema,

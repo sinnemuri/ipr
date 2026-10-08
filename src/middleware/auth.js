@@ -1,6 +1,8 @@
 const { User } = require('../models');
 const { verifyAccessToken } = require('../utils/tokens');
-const { logSuspicious } = require('../utils/logger');
+const { logSuspicious, logAdminAction } = require('../utils/logger');
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 function extractBearer(header) {
   if (!header || !header.startsWith('Bearer ')) return null;
@@ -22,6 +24,14 @@ async function authenticate(req, res, next) {
     }
 
     req.user = user;
+    if (user.role === 'admin' && MUTATING_METHODS.has(req.method)) {
+      logAdminAction('admin_action', {
+        actorId: user.id,
+        method: req.method,
+        path: req.originalUrl,
+        ip: req.ip,
+      });
+    }
     return next();
   } catch (err) {
     logSuspicious('invalid_access_token', { ip: req.ip, reason: err.name });

@@ -11,24 +11,27 @@ Postman-коллекция: [postman/Meme-Exchange-API.postman_collection.json](
 
 ```bash
 cp .env.example .env
-# PostgreSQL: локальный Homebrew (уже создана БД meme_platform)
-# или Docker: docker compose up -d
-npm install
-npm run seed
-npm run dev
 ```
 
-Если БД ещё нет (Homebrew PostgreSQL):
+Замени демонстрационные `JWT_ACCESS_SECRET` и `JWT_REFRESH_SECRET` в `.env` на случайные секреты. Затем собери и запусти PostgreSQL, seed и API одной командой:
 
 ```bash
-psql postgres -c "CREATE USER meme WITH PASSWORD 'meme' CREATEDB;"
-psql postgres -c "CREATE DATABASE meme_platform OWNER meme;"
+docker compose up --build
 ```
 
-Сервер: http://localhost:3000  
-Swagger: http://localhost:3000/api-docs
+После запуска:
 
-Тестовые учётки после `npm run seed`:
+- API: http://localhost:3000
+- Swagger: http://localhost:3000/api-docs
+- Проверка: http://localhost:3000/health
+
+Seed запускается автоматически после готовности PostgreSQL. Для фонового запуска используй `docker compose up --build -d`; логи API смотри командой `docker compose logs -f api`.
+
+Остановка: `Ctrl+C` для foreground-запуска или `docker compose down` для фонового. Данные PostgreSQL сохраняются в Docker volume; `docker compose down -v` удалит базу.
+
+Для запуска без Docker можно использовать локальный PostgreSQL, затем `npm install`, `npm run seed` и `npm run dev`.
+
+Тестовые учётки после запуска Compose (или `npm run seed` при локальном запуске):
 
 | Роль | Email | Пароль |
 |------|--------|--------|
@@ -74,6 +77,7 @@ Middleware: `roleGuard(requiredRole)` сравнивает иерархию `use
 | XSS | `sanitize-html` удаляет теги на входе |
 | JWT + bcrypt | access 15 мин, пароли `bcrypt.hash` / `bcrypt.compare` |
 | Логи подозрительных действий | `logs/security-*.log`: неудачный вход, блокировка, чужие ресурсы, 403, rate limit |
+| Audit log администратора | `logs/security-*.log`: все изменяющие запросы с токеном администратора, включая отклонённые попытки |
 
 ## Дополнительные меры (таблица задания)
 
@@ -82,6 +86,7 @@ Middleware: `roleGuard(requiredRole)` сравнивает иерархию `use
 3. Сложность пароля (8+ символов, цифра, спецсимвол)  
 5. JWT + refresh в **httpOnly** cookie  
 6. 5 неудачных входов → блокировка на 15 минут  
+7. Audit log действий администратора в отдельном security-логе  
 9. Защита от mass assignment (`pick` разрешённых полей, Joi `stripUnknown`)  
 12. Лимит размера тела запроса (`express.json({ limit })`)  
 13. Content Security Policy через helmet  

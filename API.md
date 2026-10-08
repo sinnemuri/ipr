@@ -68,7 +68,7 @@ Cookie `refreshToken`. Ответ: новый `accessToken`. Старый refres
 
 | Метод | Путь | Доступ |
 |-------|------|--------|
-| GET | `/users` | admin |
+| GET | `/users?page=1&limit=20` | admin. `limit` от 1 до 50 |
 | GET | `/users/:id` | любой аутентифицированный |
 | PATCH | `/users/:id` | владелец или admin. Разрешены только `username`, `email` |
 | PATCH | `/users/:id/role` | admin `{ "role": "moderator" }` |
@@ -108,3 +108,4 @@ HTML-теги во входных строках удаляются.
 - `415` — неверный Content-Type
 - `429` — rate limit (глобальный или per-user)
 - В production детали ошибок не отдаются клиенту
+- Все изменяющие запросы администратора записываются в `logs/security-*.log`

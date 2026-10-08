@@ -76,4 +76,12 @@ function logSuspicious(event, details = {}) {
   });
 }
 
-module.exports = { logger, securityLogger, logSuspicious };
+function logAdminAction(event, details = {}) {
+  securityLogger.info(event, {
+    event,
+    ...details,
+    at: new Date().toISOString(),
+  });
+}
+
+module.exports = { logger, securityLogger, logSuspicious, logAdminAction };

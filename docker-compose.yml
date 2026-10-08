@@ -11,6 +11,39 @@ services:
       - "5432:5432"
     volumes:
       - meme_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meme -d meme_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  seed:
+    build: .
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://meme:meme@postgres:5432/meme_platform
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["npm", "run", "seed"]
+    restart: "no"
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://meme:meme@postgres:5432/meme_platform
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
 
 volumes:
   meme_pg_data:

@@ -4,13 +4,18 @@ const { authenticate } = require('../middleware/auth');
 const { roleGuard } = require('../middleware/roleGuard');
 const { validate } = require('../middleware/validate');
 const { perUserLimiter } = require('../middleware/rateLimiters');
-const { updateUserSchema, updateRoleSchema, idParamSchema } = require('../validators/schemas');
+const {
+  updateUserSchema,
+  updateRoleSchema,
+  userListQuerySchema,
+  idParamSchema,
+} = require('../validators/schemas');
 
 const router = express.Router();
 
 router.use(authenticate, perUserLimiter);
 
-router.get('/', roleGuard('admin'), userController.list);
+router.get('/', roleGuard('admin'), validate(userListQuerySchema, 'query'), userController.list);
 router.get('/:id', validate(idParamSchema, 'params'), userController.getById);
 router.patch(
   '/:id',

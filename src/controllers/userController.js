@@ -6,8 +6,16 @@ const USER_UPDATE_FIELDS = ['username', 'email'];
 
 exports.list = async (req, res, next) => {
   try {
-    const users = await User.findAll({ order: [['id', 'ASC']] });
-    res.json({ users: users.map((u) => u.toPublicJSON()) });
+    const { page, limit } = req.query;
+    const { rows, count } = await User.findAndCountAll({
+      order: [['id', 'ASC']],
+      limit,
+      offset: (page - 1) * limit,
+    });
+    res.json({
+      users: rows.map((user) => user.toPublicJSON()),
+      pagination: { page, limit, total: count, pages: Math.ceil(count / limit) },
+    });
   } catch (err) {
     next(err);
   }

@@ -114,6 +114,13 @@
  *   get:
  *     tags: [Users]
  *     summary: Список пользователей (admin)
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
  *     responses:
  *       200: { description: OK }
  *       403: { description: Нет прав }
