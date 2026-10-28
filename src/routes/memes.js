@@ -14,6 +14,7 @@ const {
 const router = express.Router();
 
 router.get('/', validate(paginationSchema, 'query'), memeController.list);
+router.get('/stats', memeController.getStats);
 router.get(
   '/:id',
   optionalAuth,
@@ -26,6 +27,14 @@ router.post(
   perUserLimiter,
   validate(memeCreateSchema),
   memeController.create
+);
+router.put(
+  '/:id',
+  authenticate,
+  perUserLimiter,
+  validate(idParamSchema, 'params'),
+  validate(memeUpdateSchema),
+  memeController.update
 );
 router.patch(
   '/:id',

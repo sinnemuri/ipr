@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const { sequelize, Meme, Category, User, Like } = require('../models');
 const { pick } = require('../utils/sanitize');
 const { logSuspicious } = require('../utils/logger');
@@ -13,14 +13,15 @@ function canModerate(user) {
 
 exports.list = async (req, res, next) => {
   try {
-    const { page, limit, categoryId, q, sort } = req.query;
+    const { page, limit, categoryId, category, search, q, sort } = req.query;
     const where = { status: 'published' };
 
     if (categoryId) where.categoryId = categoryId;
-    if (q) {
+    if (search || q) {
+      const searchTerm = search || q;
       where[Op.or] = [
-        { title: { [Op.iLike]: `%${q}%` } },
-        { description: { [Op.iLike]: `%${q}%` } },
+        { title: { [Op.iLike]: `%${searchTerm}%` } },
+        { description: { [Op.iLike]: `%${searchTerm}%` } },
       ];
     }
 
@@ -30,7 +31,12 @@ exports.list = async (req, res, next) => {
       where,
       include: [
         { model: User, as: 'author', attributes: ['id', 'username', 'role'] },
-        { model: Category, as: 'category', attributes: ['id', 'name', 'slug'] },
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug'],
+          ...(category ? { where: { slug: category }, required: true } : {}),
+        },
       ],
       order,
       limit,
@@ -43,6 +49,31 @@ exports.list = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+exports.getStats = async (req, res, next) => {
+  try {
+    const [count, likesSum, groupedByCategory] = await Promise.all([
+      Meme.count(),
+      Meme.sum('likesCount'),
+      Meme.findAll({
+        attributes: ['categoryId', [fn('COUNT', col('id')), 'count']],
+        group: ['categoryId'],
+        raw: true,
+      }),
+    ]);
+
+    return res.json({
+      count,
+      sum: Number(likesSum || 0),
+      byCategory: groupedByCategory.map(({ categoryId, count: categoryCount }) => ({
+        categoryId,
+        count: Number(categoryCount),
+      })),
+    });
+  } catch (err) {
+    return next(err);
   }
 };
 
@@ -87,9 +118,9 @@ exports.update = async (req, res, next) => {
     if (!meme) return res.status(404).json({ error: 'Мем не найден' });
 
     const isOwner = meme.authorId === req.user.id;
-    const moderator = canModerate(req.user);
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isOwner && !moderator) {
+    if (!isOwner && !isAdmin) {
       logSuspicious('update_foreign_meme_denied', {
         actorId: req.user.id,
         memeId: meme.id,
@@ -99,8 +130,8 @@ exports.update = async (req, res, next) => {
     }
 
     const patch = pick(req.body, MEME_UPDATE_FIELDS);
-    if (patch.status && !moderator) {
-      return res.status(403).json({ error: 'Статус может менять только модератор или админ' });
+    if (patch.status && !isAdmin) {
+      return res.status(403).json({ error: 'Статус может менять только администратор' });
     }
     if (patch.categoryId) {
       const category = await Category.findByPk(patch.categoryId);
@@ -116,10 +147,14 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Удалять мемы может только администратор' });
+    }
+
     const meme = await Meme.findByPk(req.params.id);
     if (!meme) return res.status(404).json({ error: 'Мем не найден' });
     await meme.destroy();
-    return res.status(204).send();
+    return res.json({ message: 'Мем удалён' });
   } catch (err) {
     next(err);
   }

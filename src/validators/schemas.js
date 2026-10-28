@@ -53,6 +53,8 @@ const idParamSchema = Joi.object({
 const paginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(10),
+  category: Joi.string().lowercase().pattern(/^[a-z0-9-]+$/).min(2).max(80),
+  search: Joi.string().max(80),
   categoryId: Joi.number().integer().positive(),
   q: Joi.string().max(80),
   sort: Joi.string().valid('new', 'top').default('new'),
