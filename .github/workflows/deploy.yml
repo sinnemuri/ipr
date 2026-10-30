@@ -1,0 +1,70 @@
+name: MemeHub CI
+
+on:
+  push:
+    branches:
+      - ipr22
+      - kr22
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Validate and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix client
+
+      - name: Check backend syntax
+        run: |
+          node --check src/app.js
+          node --check src/config/database.js
+          node --check src/config/env.js
+          node --check src/utils/logger.js
+
+      - name: Lint frontend
+        run: npm run lint --prefix client
+
+      - name: Build frontend
+        run: npm run build --prefix client
+
+      - name: Notify Telegram on success
+        if: success()
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ MemeHub CI успешно завершён.
+            Ветка: ${{ github.ref_name }}
+            Коммит: ${{ github.sha }}
+
+      - name: Notify Telegram on failure
+        if: failure()
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ❌ MemeHub CI завершился с ошибкой.
+            Ветка: ${{ github.ref_name }}
+            Коммит: ${{ github.sha }}
+            Запуск: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

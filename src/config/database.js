@@ -2,10 +2,16 @@ const { Sequelize } = require('sequelize');
 const env = require('./env');
 const { logger } = require('../utils/logger');
 
+const databaseUrl = new URL(env.databaseUrl);
+const localDatabaseHosts = ['localhost', '127.0.0.1', 'postgres'];
+const useSsl =
+  databaseUrl.searchParams.get('sslmode') === 'require' ||
+  (env.isProd && !localDatabaseHosts.includes(databaseUrl.hostname));
+
 const sequelize = new Sequelize(env.databaseUrl, {
   dialect: 'postgres',
   logging: env.isProd ? false : (msg) => logger.debug(msg),
-  dialectOptions: env.databaseUrl.includes('sslmode=require')
+  dialectOptions: useSsl
     ? { ssl: { require: true, rejectUnauthorized: false } }
     : {},
 });

@@ -43,9 +43,37 @@ Seed запускается автоматически после готовно
 
 Без Docker можно указать `DATABASE_URL` облачной БД (Neon).
 
+## React-клиент и CI
+
+Клиент находится в `client/` и использует API из корня репозитория. Установка и запуск из корня:
+
+```bash
+npm ci
+npm ci --prefix client
+cp client/.env.example client/.env
+npm run dev --prefix client
+```
+
+Для первоначального создания приложения и установки его зависимостей:
+
+```bash
+npm create vite@latest client -- --template react
+npm --prefix client install
+npm --prefix client install axios tailwindcss @tailwindcss/vite
+```
+
+`client/.env` задаёт `VITE_API_URL` (локально `http://localhost:3000`, в Vercel — URL Render API). API разрешает `http://localhost:5173` и origin, заданные в `CLIENT_URL` или `CORS_ORIGINS`.
+
+Клиент предоставляет ленту мемов с поиском (debounce), категориями, отложенной загрузкой изображений и формами регистрации/входа/CRUD. Создание требует входа, изменение доступно автору или администратору, удаление — администратору.
+
+Workflow `.github/workflows/deploy.yml` запускается при push в `ipr22` и `kr22`: устанавливает backend/frontend, проверяет синтаксис сервера, lint и production-сборку клиента, затем отправляет результат в Telegram. Для уведомлений добавьте GitHub Actions secrets `TELEGRAM_TO` (chat ID) и `TELEGRAM_TOKEN` (токен бота).
+
+В Render задайте `NODE_ENV=production`, `DATABASE_URL` от Neon, JWT-секреты и `CLIENT_URL` (полный Vercel origin; несколько значений можно разделить запятыми). Для мониторинга доступны `/health`, `/metrics` и тестовый `/debug-sentry`; задайте `SENTRY_DSN` и `LOGTAIL_TOKEN` для сбора ошибок и отправки логов в Better Stack. Пустые `SENTRY_DSN` и `LOGTAIL_TOKEN` отключают облачные интеграции.
+
 ## Структура
 
 ```
+client/           # React + Vite frontend
 src/
   config/          # env, Sequelize
   models/          # User, Category, Meme, Like

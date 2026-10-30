@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
+const { Logtail } = require('@logtail/node');
+const { LogtailTransport } = require('@logtail/winston');
 require('winston-daily-rotate-file');
 
 const logsDir = path.join(process.cwd(), 'logs');
@@ -51,12 +53,19 @@ const securityRotate = new winston.transports.DailyRotateFile({
   format: fileFormat,
 });
 
+const logtail = process.env.LOGTAIL_TOKEN
+  ? new Logtail(process.env.LOGTAIL_TOKEN)
+  : null;
+const appCloudTransport = logtail ? new LogtailTransport(logtail) : null;
+const securityCloudTransport = logtail ? new LogtailTransport(logtail) : null;
+
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   transports: [
     new winston.transports.Console({ format: consoleFormat }),
     errorRotate,
     appRotate,
+    ...(appCloudTransport ? [appCloudTransport] : []),
   ],
 });
 
@@ -65,6 +74,7 @@ const securityLogger = winston.createLogger({
   transports: [
     new winston.transports.Console({ format: consoleFormat }),
     securityRotate,
+    ...(securityCloudTransport ? [securityCloudTransport] : []),
   ],
 });
 
