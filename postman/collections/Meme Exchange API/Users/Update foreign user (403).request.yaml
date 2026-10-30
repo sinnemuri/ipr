@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/users/1"
+method: PATCH
+headers:
+  Authorization: Bearer {{accessToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "stolen"
+    }
+order: 5000

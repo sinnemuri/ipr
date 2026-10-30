@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/categories"
+method: POST
+headers:
+  Authorization: Bearer {{moderatorToken}}
+  Content-Type: text/plain
+body:
+  type: text
+  content: name=hack
+order: 4000

@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: 06ff1242-4f0f-4c9f-86a6-940cbf38495b
+
+cloudResources:
+  collections:
+    ../postman/collections/Meme Exchange API: b47efc0d-8d2d-4c96-afda-1923f4b75792
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/memes/{{memeId}}"
+method: PATCH
+headers:
+  Authorization: Bearer {{moderatorToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "status": "hidden"
+    }
+order: 8000

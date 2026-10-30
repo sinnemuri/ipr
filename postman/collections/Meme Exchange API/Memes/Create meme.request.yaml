@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/memes"
+method: POST
+headers:
+  Authorization: Bearer {{accessToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "Когда npm install идёт 10 минут",
+      "imageUrl": "https://placehold.co/600x400/png?text=npm",
+      "description": "<script>alert(1)</script> боль",
+      "categoryId": 2
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      if (json.meme) pm.collectionVariables.set('memeId', String(json.meme.id));
+    language: text/javascript
+order: 2000

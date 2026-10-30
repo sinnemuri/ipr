@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/memes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "Nope",
+      "imageUrl": "https://placehold.co/600x400.png",
+      "categoryId": 1
+    }
+order: 3000

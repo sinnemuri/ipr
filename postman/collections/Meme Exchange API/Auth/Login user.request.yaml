@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "user@memes.local",
+      "password": "User#1234"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      if (json.accessToken) pm.collectionVariables.set('accessToken', json.accessToken);
+      if (json.user) pm.collectionVariables.set('userId', String(json.user.id));
+    language: text/javascript
+order: 4000

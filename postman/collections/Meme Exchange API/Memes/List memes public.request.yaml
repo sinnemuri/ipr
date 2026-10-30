@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/memes?page=1&limit=10&sort=top"
+method: GET
+queryParams:
+  page: "1"
+  limit: "10"
+  sort: top
+order: 1000

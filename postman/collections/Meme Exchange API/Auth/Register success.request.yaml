@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "newuser@memes.local",
+      "username": "newuser",
+      "password": "Passw0rd!"
+    }
+order: 1000

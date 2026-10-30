@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/memes?q='; DROP TABLE users;--"
+method: GET
+queryParams:
+  q: "'; DROP TABLE users;--"
+order: 11000

@@ -1,0 +1,14 @@
+$kind: collection
+description: |-
+  Коллекция для тестирования безопасного REST API платформы обмена мемами. Сценарии успеха и ошибок.
+
+  Переменные: baseUrl, accessToken, userId, memeId, categoryId, resetToken.
+variables:
+  baseUrl: http://localhost:3000
+  accessToken: ""
+  adminToken: ""
+  moderatorToken: ""
+  userId: "1"
+  categoryId: "1"
+  memeId: "1"
+  resetToken: ""

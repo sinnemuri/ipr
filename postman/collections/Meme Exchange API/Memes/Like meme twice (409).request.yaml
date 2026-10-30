@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/memes/{{memeId}}/like"
+method: POST
+headers:
+  Authorization: Bearer {{accessToken}}
+order: 6000

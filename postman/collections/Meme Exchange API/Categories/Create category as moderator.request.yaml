@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/categories"
+method: POST
+headers:
+  Authorization: Bearer {{moderatorToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Игры",
+      "slug": "games",
+      "description": "<b>геймерские</b> мемы"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      if (json.category) pm.collectionVariables.set('categoryId', String(json.category.id));
+    language: text/javascript
+order: 2000
