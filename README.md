@@ -24,6 +24,7 @@ docker compose up --build
 - API: http://localhost:3000
 - Swagger: http://localhost:3000/api-docs
 - Проверка: http://localhost:3000/health
+- PostgreSQL из локальных приложений: `localhost:5433` (в контейнерах API использует внутренний адрес `postgres:5432`)
 
 Seed запускается автоматически после готовности PostgreSQL. Для фонового запуска используй `docker compose up --build -d`; логи API смотри командой `docker compose logs -f api`.
 
