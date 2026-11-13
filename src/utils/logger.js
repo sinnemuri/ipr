@@ -53,8 +53,19 @@ const securityRotate = new winston.transports.DailyRotateFile({
   format: fileFormat,
 });
 
+const logtailIngestingHost = process.env.LOGTAIL_INGESTING_HOST?.trim();
+const logtailEndpoint = logtailIngestingHost
+  ? new URL(
+      logtailIngestingHost.startsWith('http')
+        ? logtailIngestingHost
+        : `https://${logtailIngestingHost}`
+    ).origin
+  : undefined;
 const logtail = process.env.LOGTAIL_TOKEN
-  ? new Logtail(process.env.LOGTAIL_TOKEN)
+  ? new Logtail(
+      process.env.LOGTAIL_TOKEN,
+      logtailEndpoint ? { endpoint: logtailEndpoint } : undefined
+    )
   : null;
 const appCloudTransport = logtail ? new LogtailTransport(logtail) : null;
 const securityCloudTransport = logtail ? new LogtailTransport(logtail) : null;
