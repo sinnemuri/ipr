@@ -15,11 +15,11 @@ concurrency:
 jobs:
   check-api:
     name: Check backend health
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
       - name: Restore previous status
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .github/uptime-state/status
           key: memehub-uptime-state-${{ github.run_id }}
@@ -102,7 +102,7 @@ jobs:
 
       - name: Save status after a change
         if: steps.monitor.outputs.status_changed == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .github/uptime-state/status
           key: memehub-uptime-state-${{ github.run_id }}
