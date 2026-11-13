@@ -1,13 +1,6 @@
 const Sentry = require('@sentry/node');
 const env = require('./config/env');
 
-Sentry.init({
-  dsn: env.sentryDsn,
-  environment: env.nodeEnv,
-  enabled: Boolean(env.sentryDsn),
-  sendDefaultPii: false,
-});
-
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');

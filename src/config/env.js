@@ -14,7 +14,6 @@ const env = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   isProd: process.env.NODE_ENV === 'production',
-  sentryDsn: process.env.SENTRY_DSN || '',
   logtailToken: process.env.LOGTAIL_TOKEN || '',
   clientUrl,
   databaseUrl: required('DATABASE_URL'),

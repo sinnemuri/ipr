@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
+COPY instrument.mjs ./instrument.mjs
 COPY src ./src
 
 ENV NODE_ENV=production

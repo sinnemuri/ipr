@@ -4,8 +4,8 @@
   "description": "Безопасный REST API платформы для обмена мемами",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "start": "node --import ./instrument.mjs src/server.js",
+    "dev": "node --watch --import ./instrument.mjs src/server.js",
     "seed": "node src/seed.js"
   },
   "keywords": [
@@ -24,7 +24,7 @@
     "@logtail/winston": "^0.5.12",
     "@neon/config": "^1.9.6",
     "@neon/env": "^1.6.6",
-    "@sentry/node": "^11.10.0",
+    "@sentry/node": "^11.12.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
