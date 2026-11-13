@@ -63,17 +63,34 @@ npm --prefix client install
 npm --prefix client install axios tailwindcss @tailwindcss/vite
 ```
 
-`client/.env` задаёт `VITE_API_URL` (локально `http://localhost:3000`, в Vercel — URL Render API). API разрешает `http://localhost:5173` и origin, заданные в `CLIENT_URL` или `CORS_ORIGINS`.
+`client/.env` задаёт `VITE_API_URL` (локально `http://localhost:3000`, в Netlify — URL Render API). API разрешает `http://localhost:5173` и origin, заданные в `CLIENT_URL` или `CORS_ORIGINS`.
 
 Клиент предоставляет ленту мемов с поиском (debounce), категориями, отложенной загрузкой изображений и формами регистрации/входа/CRUD. Создание требует входа, изменение доступно автору или администратору, удаление — администратору.
 
-Workflow `.github/workflows/deploy.yml` запускается при push в `ipr22` и `kr22`: устанавливает backend/frontend, проверяет синтаксис сервера, lint и production-сборку клиента, затем отправляет результат в Telegram. Для уведомлений добавьте GitHub Actions secrets `TELEGRAM_TO` (chat ID) и `TELEGRAM_TOKEN` (токен бота).
+Workflow `.github/workflows/deploy.yml` запускается при push в `ipr22` и `kr22`: устанавливает backend/frontend, проверяет синтаксис сервера, запускает backend-тесты, проверяет lint и production-сборку клиента, затем отправляет результат в Telegram. Для уведомлений добавьте GitHub Actions secrets `TELEGRAM_TO` (chat ID) и `TELEGRAM_TOKEN` (токен бота). Render и Netlify должны быть подключены к GitHub и настроены на автоматический deploy при push в `ipr22`; сам workflow выполняет CI, а деплой запускают интеграции хостингов.
 
-Workflow `.github/workflows/uptime-telegram.yml` проверяет `/health` каждые 5 минут и отправляет Telegram-сообщение при переходе API в состояние недоступности и при восстановлении. Для настройки добавьте GitHub Actions repository variable `BACKEND_HEALTH_URL` с полным HTTPS URL Render `/health` и оставьте настроенные secrets `TELEGRAM_TO` и `TELEGRAM_TOKEN`. Текущее состояние хранится в GitHub Actions cache, поэтому отдельный PAT и дополнительные GitHub API-права не требуются. Чтобы расписание работало, сделайте `ipr22` default branch в настройках GitHub-репозитория.
+Workflow `.github/workflows/uptime-telegram.yml` проверяет backend и (если настроен `FRONTEND_URL`) frontend каждые 5 минут и отправляет Telegram-сообщение при переходе сервиса в состояние недоступности и при восстановлении. В GitHub Actions repository variables задайте `BACKEND_HEALTH_URL` (полный HTTPS URL Render `/health`) и `FRONTEND_URL` (публичный URL Netlify, отвечающий без авторизации HTTP 2xx). Workflow использует secrets `TELEGRAM_TO` и `TELEGRAM_TOKEN`, а текущее состояние хранит в GitHub Actions cache. Для расписания `ipr22` должна быть default branch.
 
-В Render задайте `NODE_ENV=production`, `DATABASE_URL` от Neon, JWT-секреты и `CLIENT_URL` (полный Vercel origin; несколько значений можно разделить запятыми). Для мониторинга доступны `/health` и `/metrics`; задайте `SENTRY_DSN` и `LOGTAIL_TOKEN` для сбора ошибок и отправки логов в Better Stack. Если у Better Stack source указан отдельный `Ingesting host`, задайте его hostname в `LOGTAIL_INGESTING_HOST` (например, `logs.example.com`, без токена); иначе SDK использует стандартный endpoint. Пустые `SENTRY_DSN` и `LOGTAIL_TOKEN` отключают облачные интеграции. Тестовый маршрут Sentry удалён после проверки.
+В Render задайте `NODE_ENV=production`, `DATABASE_URL` от Neon, JWT-секреты, `CLIENT_URL` (полный Netlify origin; несколько значений можно разделить запятыми), `SENTRY_DSN`, `LOGTAIL_TOKEN`, `LOGTAIL_INGESTING_HOST`, `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`. Последние две переменные нужны, чтобы Telegram получал уведомление при HTTP 5xx; токен бота задавайте только в Render Environment, не в коде и не в GitHub variables. Уведомления дедуплицируются по маршруту и статусу на пять минут.
 
-Sentry инициализируется до загрузки backend-модулей через `instrument.mjs`; команды `npm start` и `npm run dev` подключают его автоматически. В Render задайте DSN проекта Node.js в `SENTRY_DSN`, не помещая DSN в исходный код.
+Для Sentry backend DSN задаётся в Render как `SENTRY_DSN`. Для frontend создайте проект React в Sentry и задайте его DSN в Netlify как `VITE_SENTRY_DSN`. В настройках сборки Netlify дополнительно задайте `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` и `SENTRY_PROJECT`: Vite плагин загрузит source maps в Sentry и удалит карты из собранного `dist`. Не добавляйте `SENTRY_AUTH_TOKEN` к переменным с префиксом `VITE_`. React Error Boundary показывает безопасную страницу ошибки и отправляет исключение в Sentry. Если параметры загрузки карт не заданы, production source maps не генерируются.
+
+Для проверки логов задайте `LOGTAIL_TOKEN` и `LOGTAIL_INGESTING_HOST` из настроек Better Stack source. Тестовый маршрут Sentry удалён после backend-проверки; его не следует открывать на production.
+
+Sentry backend инициализируется до загрузки модулей через `instrument.mjs`; команды `npm start` и `npm run dev` подключают его автоматически. Frontend SDK инициализируется до рендера React в `client/src/main.jsx`.
+
+## Production ссылки и уведомления
+
+- Frontend (Netlify): https://memehubci.netlify.app — проверьте доступность для внешних пользователей; при последней внешней проверке ответил HTTP 401.
+- Backend (Render): https://memehub-api.onrender.com
+- Health: https://memehub-api.onrender.com/health
+- Metrics: https://memehub-api.onrender.com/metrics
+- Публичная status page UptimeRobot: https://stats.uptimerobot.com/xyxPttnCmP
+- Better Stack Logs: https://telemetry.betterstack.com/team/0/tail
+- Sentry: https://sentry.io/
+- Контакт по проекту: https://github.com/sinnemuri/ipr/issues
+
+Не публикуйте bot token, Sentry auth token, chat ID или другие секреты. Telegram-оповещения отправляются в настроенный приватный чат.
 
 ## Структура
 
@@ -161,4 +178,4 @@ curl 'http://localhost:3000/memes?sort=top'
 
 ## Git
 
-Рабочая ветка: `ipr21`.
+Рабочая ветка: `ipr22`.

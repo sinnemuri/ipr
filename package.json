@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node --import ./instrument.mjs src/server.js",
     "dev": "node --watch --import ./instrument.mjs src/server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "test": "node --test"
   },
   "keywords": [
     "rest",

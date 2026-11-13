@@ -21,7 +21,7 @@ jobs:
       - name: Restore previous status
         uses: actions/cache/restore@v5
         with:
-          path: .github/uptime-state/status
+          path: .github/uptime-state
           key: memehub-uptime-state-${{ github.run_id }}
           restore-keys: |
             memehub-uptime-state-
@@ -29,64 +29,97 @@ jobs:
       - name: Check health endpoint and track status changes
         id: monitor
         env:
-          HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL }}
+          BACKEND_HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
         run: |
           set -euo pipefail
 
-          if [ -z "$HEALTH_URL" ]; then
-            echo "::error::Set the BACKEND_HEALTH_URL repository variable to the Render /health URL."
+          if [ -z "$BACKEND_HEALTH_URL" ]; then
+            echo "::error::Set the BACKEND_HEALTH_URL repository variable."
             exit 1
           fi
+          if [ -z "$FRONTEND_URL" ]; then
+            echo "::warning::Set FRONTEND_URL to enable frontend availability checks."
+          fi
 
-          state_file=".github/uptime-state/status"
-          mkdir -p "$(dirname "$state_file")"
-          old_status="unknown"
-          if [ -f "$state_file" ]; then
-            IFS= read -r old_status < "$state_file" || true
-            if [ "$old_status" != "up" ] && [ "$old_status" != "down" ]; then
-              old_status="unknown"
+          state_dir=".github/uptime-state"
+          mkdir -p "$state_dir"
+          alerts_file="$(mktemp)"
+          status_changed="false"
+
+          check_monitor() {
+            local name="$1"
+            local url="$2"
+            local check_health_json="$3"
+            local state_file="${state_dir}/${name}"
+            local old_status="unknown"
+
+            if [ -f "$state_file" ]; then
+              IFS= read -r old_status < "$state_file" || true
+              if [ "$old_status" != "up" ] && [ "$old_status" != "down" ]; then
+                old_status="unknown"
+              fi
             fi
-          fi
 
-          response_file="$(mktemp)"
-          if http_code="$(curl --silent --show-error --output "$response_file" \
-            --write-out '%{http_code}' --connect-timeout 10 --max-time 20 "$HEALTH_URL")"; then
-            curl_exit=0
-          else
-            curl_exit=$?
-            http_code="000"
-          fi
+            local response_file
+            response_file="$(mktemp)"
+            local http_code
+            local curl_exit
+            if http_code="$(curl --silent --show-error --location --max-redirs 5 --output "$response_file" \
+              --write-out '%{http_code}' --connect-timeout 10 --max-time 20 "$url")"; then
+              curl_exit=0
+            else
+              curl_exit=$?
+              http_code="000"
+            fi
 
-          if [ "$curl_exit" -eq 0 ] && [ "$http_code" = "200" ] \
-            && node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{process.exit(JSON.parse(s).status==="ok"?0:1)}catch{process.exit(1)}})' < "$response_file"; then
-            new_status="up"
-          else
-            new_status="down"
-          fi
-          rm -f "$response_file"
+            local response_ok="false"
+            if [ "$curl_exit" -eq 0 ] && [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+              response_ok="true"
+              if [ "$check_health_json" = "true" ] \
+                && { [ "$http_code" != "200" ] \
+                  || ! node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{process.exit(JSON.parse(s).status==="ok"?0:1)}catch{process.exit(1)}})' < "$response_file"; }; then
+                response_ok="false"
+              fi
+            fi
+            rm -f "$response_file"
 
-          printf '%s\n' "$new_status" > "$state_file"
+            local new_status
+            if [ "$response_ok" = "true" ]; then
+              new_status="up"
+            else
+              new_status="down"
+            fi
+            printf '%s\n' "$new_status" > "$state_file"
+
+            if [ "$old_status" != "$new_status" ]; then
+              status_changed="true"
+              if [ "$new_status" = "down" ]; then
+                printf '⚠️ Сервис %s недоступен\nURL: %s\nHTTP: %s\n\n' "$name" "$url" "$http_code" >> "$alerts_file"
+              elif [ "$old_status" = "down" ]; then
+                printf '✅ Сервис %s восстановлен\nURL: %s\nHTTP: %s\n\n' "$name" "$url" "$http_code" >> "$alerts_file"
+              fi
+            fi
+          }
+
+          check_monitor "backend" "$BACKEND_HEALTH_URL" "true"
+          if [ -n "$FRONTEND_URL" ]; then
+            check_monitor "frontend" "$FRONTEND_URL" "false"
+          fi
 
           notify="false"
-          status_changed="false"
           message=""
-          if [ "$old_status" != "$new_status" ]; then
-            status_changed="true"
-            if [ "$new_status" = "down" ]; then
-              notify="true"
-              message="$(printf 'MemeHub API недоступен\nURL: %s\nHTTP: %s\nПроверка: %s/%s/actions/runs/%s' \
-                "$HEALTH_URL" "$http_code" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
-            elif [ "$old_status" = "down" ]; then
-              notify="true"
-              message="$(printf 'MemeHub API восстановлен\nURL: %s\nHTTP: %s\nПроверка: %s/%s/actions/runs/%s' \
-                "$HEALTH_URL" "$http_code" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
-            fi
+          if [ -s "$alerts_file" ]; then
+            notify="true"
+            message="$(cat "$alerts_file")"
+            message="$(printf '%s\nRun: %s/%s/actions/runs/%s' \
+              "$message" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
           fi
+          rm -f "$alerts_file"
 
           {
             echo "notify=${notify}"
             echo "status_changed=${status_changed}"
-            echo "new_status=${new_status}"
             echo "message<<EOF"
             printf '%s\n' "$message"
             echo "EOF"
@@ -104,5 +137,5 @@ jobs:
         if: steps.monitor.outputs.status_changed == 'true'
         uses: actions/cache/save@v5
         with:
-          path: .github/uptime-state/status
+          path: .github/uptime-state
           key: memehub-uptime-state-${{ github.run_id }}
