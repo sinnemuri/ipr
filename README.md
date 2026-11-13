@@ -69,7 +69,7 @@ npm --prefix client install axios tailwindcss @tailwindcss/vite
 
 Workflow `.github/workflows/deploy.yml` запускается при push в `ipr22` и `kr22`: устанавливает backend/frontend, проверяет синтаксис сервера, lint и production-сборку клиента, затем отправляет результат в Telegram. Для уведомлений добавьте GitHub Actions secrets `TELEGRAM_TO` (chat ID) и `TELEGRAM_TOKEN` (токен бота).
 
-В Render задайте `NODE_ENV=production`, `DATABASE_URL` от Neon, JWT-секреты и `CLIENT_URL` (полный Vercel origin; несколько значений можно разделить запятыми). Для мониторинга доступны `/health`, `/metrics` и тестовый `/debug-sentry`; задайте `SENTRY_DSN` и `LOGTAIL_TOKEN` для сбора ошибок и отправки логов в Better Stack. Пустые `SENTRY_DSN` и `LOGTAIL_TOKEN` отключают облачные интеграции.
+В Render задайте `NODE_ENV=production`, `DATABASE_URL` от Neon, JWT-секреты и `CLIENT_URL` (полный Vercel origin; несколько значений можно разделить запятыми). Для мониторинга доступны `/health` и `/metrics`; задайте `SENTRY_DSN` и `LOGTAIL_TOKEN` для сбора ошибок и отправки логов в Better Stack. Пустые `SENTRY_DSN` и `LOGTAIL_TOKEN` отключают облачные интеграции. Тестовый маршрут Sentry удалён после проверки.
 
 Sentry инициализируется до загрузки backend-модулей через `instrument.mjs`; команды `npm start` и `npm run dev` подключают его автоматически. В Render задайте DSN проекта Node.js в `SENTRY_DSN`, не помещая DSN в исходный код.
 

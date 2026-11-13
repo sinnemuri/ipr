@@ -81,9 +81,6 @@ app.get('/metrics', (req, res) => {
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
-app.get('/debug-sentry', (req, res) => {
-  throw new Error('Test Sentry Error');
-});
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
