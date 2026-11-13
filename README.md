@@ -81,7 +81,7 @@ Sentry backend инициализируется до загрузки модул
 
 ## Production ссылки и уведомления
 
-- Frontend (Netlify): https://memehubci.netlify.app — проверьте доступность для внешних пользователей; при последней внешней проверке ответил HTTP 401.
+- Frontend (Netlify): https://memehubci.netlify.app
 - Backend (Render): https://memehub-api.onrender.com
 - Health: https://memehub-api.onrender.com/health
 - Metrics: https://memehub-api.onrender.com/metrics
